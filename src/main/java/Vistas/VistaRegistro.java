@@ -18,6 +18,7 @@ import javax.swing.JPasswordField;
 public class VistaRegistro extends javax.swing.JPanel implements ActionListener {
 
     private UsuarioDAO usuarioDAO;
+    private MainFrame mainFrame;
     
     // Declaramos el JPasswordField que DEBES añadir en el diseñador
     private javax.swing.JPasswordField txtContraseña;
@@ -25,13 +26,10 @@ public class VistaRegistro extends javax.swing.JPanel implements ActionListener 
     /**
      * Creates new form VistaRegistro
      */
-    public VistaRegistro() {
+    public VistaRegistro(MainFrame aThis) {
+        this.mainFrame = mainFrame; // Guardar la referencia
         initComponents();
-        
-        // Inicializar el DAO
         this.usuarioDAO = new UsuarioDAO();
-        
-        // Añadir este panel como listener para el botón
         bttnRegistrar.addActionListener(this);
     }
     
@@ -64,6 +62,8 @@ public class VistaRegistro extends javax.swing.JPanel implements ActionListener 
             if (exito) {
                 JOptionPane.showMessageDialog(this, "Usuario " + nombres + " registrado exitosamente.", "Registro Completo", JOptionPane.INFORMATION_MESSAGE);
                 limpiarCampos();
+                
+                mainFrame.mostrarLogin();
                 // TODO: Aquí deberías navegar de vuelta al Login
             } else {
                 JOptionPane.showMessageDialog(this, "Error al registrar el usuario. El correo o RUT podrían ya existir.", "Error de Registro", JOptionPane.ERROR_MESSAGE);

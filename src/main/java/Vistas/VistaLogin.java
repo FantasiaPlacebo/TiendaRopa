@@ -11,25 +11,25 @@ import java.awt.event.ActionListener;
 import javax.swing.JOptionPane;
 
 
+
 /**
  *
  * @author Santo Tomas
  */
 public class VistaLogin extends javax.swing.JPanel implements ActionListener {
 
+    private MainFrame mainFrame;
+    
     // Instancia del DAO
     private UsuarioDAO usuarioDAO;
 
     /**
      * Creates new form VistaLogin
      */
-    public VistaLogin() {
+    public VistaLogin(MainFrame aThis) {
+        this.mainFrame = mainFrame; // Guardar la referencia
         initComponents();
-        
-        // Inicializar el DAO
         this.usuarioDAO = new UsuarioDAO();
-        
-        // Añadir este panel como listener para el botón
         bttnIngresar.addActionListener(this);
     }
 
@@ -51,7 +51,7 @@ public class VistaLogin extends javax.swing.JPanel implements ActionListener {
             if (usuario != null) {
                 // ¡Éxito! Usuario encontrado
                 JOptionPane.showMessageDialog(this, "¡Bienvenido " + usuario.getNombre() + "!", "Inicio de sesión exitoso", JOptionPane.INFORMATION_MESSAGE);
-                
+                mainFrame.mostrarPuntoVenta();
                 // TODO: Aquí llamas a tu método principal para cambiar a la VistaPuntoVenta
                 // Ejemplo: mainFrame.mostrarVistaVenta(usuario);
                 

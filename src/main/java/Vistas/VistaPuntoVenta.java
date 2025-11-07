@@ -27,7 +27,7 @@ public class VistaPuntoVenta extends javax.swing.JPanel implements ActionListene
     /**
      * Creates new form VistaPuntoVenta
      */
-    public VistaPuntoVenta() {
+    public VistaPuntoVenta(MainFrame aThis) {
         initComponents();
         
         // Inicializar el carrito
