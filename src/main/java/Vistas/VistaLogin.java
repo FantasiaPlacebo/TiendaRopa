@@ -4,6 +4,8 @@
  */
 package Vistas;
 
+import Controlador.UsuarioDAO;
+import Modelo.Usuario;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.JOptionPane;
@@ -15,36 +17,47 @@ import javax.swing.JOptionPane;
  */
 public class VistaLogin extends javax.swing.JPanel implements ActionListener {
 
+    // Instancia del DAO
+    private UsuarioDAO usuarioDAO;
 
+    /**
+     * Creates new form VistaLogin
+     */
     public VistaLogin() {
         initComponents();
         
+        // Inicializar el DAO
+        this.usuarioDAO = new UsuarioDAO();
+        
+        // Añadir este panel como listener para el botón
         bttnIngresar.addActionListener(this);
     }
-    
+
     @Override
     public void actionPerformed(ActionEvent e) {
-        // Verificar si la fuente del evento es el botón Ingresar
         if (e.getSource() == bttnIngresar) {
             String correo = txtCorreo.getText();
-            // Se usa getPassword() para JPasswordField por seguridad
             String contraseña = new String(txtContraseña.getPassword());
 
-            // Validación simple (no vacío)
+            // Validación de campos vacíos
             if (correo.isEmpty() || contraseña.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Por favor, ingrese correo y contraseña.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            // --- LÓGICA DE LOGIN CON BASE DE DATOS ---
+            Usuario usuario = usuarioDAO.validarUsuario(correo, contraseña);
+            
+            if (usuario != null) {
+                // ¡Éxito! Usuario encontrado
+                JOptionPane.showMessageDialog(this, "¡Bienvenido " + usuario.getNombre() + "!", "Inicio de sesión exitoso", JOptionPane.INFORMATION_MESSAGE);
+                
+                // TODO: Aquí llamas a tu método principal para cambiar a la VistaPuntoVenta
+                // Ejemplo: mainFrame.mostrarVistaVenta(usuario);
+                
             } else {
-                // --- SIMULACIÓN DE LÓGICA DE LOGIN ---
-                // Aquí iría tu lógica real para verificar en la BD
-                // Ejemplo: UsuarioDAO.validarUsuario(correo, contraseña)
-                
-                System.out.println("Intento de login con Correo: " + correo + " | Pass: " + contraseña);
-
-                // Simulamos un login exitoso
-                JOptionPane.showMessageDialog(this, "¡Inicio de sesión exitoso!", "Bienvenido", JOptionPane.INFORMATION_MESSAGE);
-                
-                // TODO: Aquí deberías llamar al método en tu JFrame principal
-                // para cambiar a la siguiente vista (ej. VistaPuntoVenta).
+                // Fracaso
+                JOptionPane.showMessageDialog(this, "Correo o contraseña incorrectos.", "Error de inicio de sesión", JOptionPane.ERROR_MESSAGE);
             }
         }
     }

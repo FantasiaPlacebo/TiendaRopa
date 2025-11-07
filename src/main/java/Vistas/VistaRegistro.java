@@ -4,10 +4,12 @@
  */
 package Vistas;
 
+import Controlador.UsuarioDAO;
 import Modelo.Usuario;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.JOptionPane;
+import javax.swing.JPasswordField;
 
 /**
  *
@@ -15,16 +17,23 @@ import javax.swing.JOptionPane;
  */
 public class VistaRegistro extends javax.swing.JPanel implements ActionListener {
 
+    private UsuarioDAO usuarioDAO;
+    
+    // Declaramos el JPasswordField que DEBES añadir en el diseñador
+    private javax.swing.JPasswordField txtContraseña;
+    
     /**
      * Creates new form VistaRegistro
      */
     public VistaRegistro() {
         initComponents();
         
+        // Inicializar el DAO
+        this.usuarioDAO = new UsuarioDAO();
+        
         // Añadir este panel como listener para el botón
         bttnRegistrar.addActionListener(this);
     }
-    
     
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -33,44 +42,43 @@ public class VistaRegistro extends javax.swing.JPanel implements ActionListener 
             String apellidos = txtApellidos.getText();
             String rut = txtRut.getText();
             String correo = txtCorreo2.getText();
+            
+            // ASUMIENDO que añadiste 'txtContraseña' al diseñador
+            // Si no lo hiciste, esta línea dará un NullPointerException
+            String contraseña = new String(txtContraseña.getPassword()); 
 
             // Validación simple
-            if (nombres.isEmpty() || apellidos.isEmpty() || rut.isEmpty() || correo.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Todos los campos son obligatorios.", "Error", JOptionPane.ERROR_MESSAGE);
-                return; // Detiene la ejecución si hay campos vacíos
+            if (nombres.isEmpty() || apellidos.isEmpty() || rut.isEmpty() || correo.isEmpty() || contraseña.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Todos los campos (incluida contraseña) son obligatorios.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
             }
 
-            // --- SIMULACIÓN DE LÓGICA DE REGISTRO ---
+            // --- LÓGICA DE REGISTRO CON BASE DE DATOS ---
             
-            // 1. Creamos el objeto Usuario con los datos de la vista
-            // Asumimos ID 0 (la BD debería generarlo) y rol "Cliente" por defecto
-            Usuario nuevoUsuario = new Usuario(0, nombres, apellidos, rut, correo, "Cliente");
+            // 1. Creamos el objeto Usuario
+            Usuario nuevoUsuario = new Usuario(0, nombres, apellidos, rut, correo, "Cliente"); // Rol por defecto
 
-            // 2. Aquí llamarías a tu DAO para guardarlo
-            // Ejemplo: UsuarioDAO.registrarUsuario(nuevoUsuario);
-            
-            System.out.println("Intentando registrar nuevo usuario:");
-            System.out.println("Nombre: " + nuevoUsuario.getNombre() + " " + nuevoUsuario.getApellido());
-            System.out.println("RUT: " + nuevoUsuario.getRut());
+            // 2. Llamamos al DAO para registrar
+            boolean exito = usuarioDAO.registrarUsuario(nuevoUsuario, contraseña);
 
-            // 3. Confirmación al usuario
-            JOptionPane.showMessageDialog(this, "Usuario " + nombres + " registrado exitosamente.", "Registro Completo", JOptionPane.INFORMATION_MESSAGE);
-
-            // 4. Limpiar campos después del registro
-            limpiarCampos();
-            
-            // TODO: Aquí deberías navegar de vuelta al Login o al Punto de Venta.
+            if (exito) {
+                JOptionPane.showMessageDialog(this, "Usuario " + nombres + " registrado exitosamente.", "Registro Completo", JOptionPane.INFORMATION_MESSAGE);
+                limpiarCampos();
+                // TODO: Aquí deberías navegar de vuelta al Login
+            } else {
+                JOptionPane.showMessageDialog(this, "Error al registrar el usuario. El correo o RUT podrían ya existir.", "Error de Registro", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 
-    /**
-     * Método helper para limpiar los campos de texto
-     */
     private void limpiarCampos() {
         txtNombres.setText("");
         txtApellidos.setText("");
         txtRut.setText("");
         txtCorreo2.setText("");
+        if (txtContraseña != null) {
+            txtContraseña.setText("");
+        }
     }
     
 
