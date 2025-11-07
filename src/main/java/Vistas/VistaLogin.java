@@ -4,18 +4,51 @@
  */
 package Vistas;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import javax.swing.JOptionPane;
+
+
 /**
  *
  * @author Santo Tomas
  */
-public class VistaLogin extends javax.swing.JPanel {
+public class VistaLogin extends javax.swing.JPanel implements ActionListener {
 
-    /**
-     * Creates new form VistaLogin
-     */
+
     public VistaLogin() {
         initComponents();
+        
+        bttnIngresar.addActionListener(this);
     }
+    
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        // Verificar si la fuente del evento es el botón Ingresar
+        if (e.getSource() == bttnIngresar) {
+            String correo = txtCorreo.getText();
+            // Se usa getPassword() para JPasswordField por seguridad
+            String contraseña = new String(txtContraseña.getPassword());
+
+            // Validación simple (no vacío)
+            if (correo.isEmpty() || contraseña.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Por favor, ingrese correo y contraseña.", "Error", JOptionPane.ERROR_MESSAGE);
+            } else {
+                // --- SIMULACIÓN DE LÓGICA DE LOGIN ---
+                // Aquí iría tu lógica real para verificar en la BD
+                // Ejemplo: UsuarioDAO.validarUsuario(correo, contraseña)
+                
+                System.out.println("Intento de login con Correo: " + correo + " | Pass: " + contraseña);
+
+                // Simulamos un login exitoso
+                JOptionPane.showMessageDialog(this, "¡Inicio de sesión exitoso!", "Bienvenido", JOptionPane.INFORMATION_MESSAGE);
+                
+                // TODO: Aquí deberías llamar al método en tu JFrame principal
+                // para cambiar a la siguiente vista (ej. VistaPuntoVenta).
+            }
+        }
+    }
+    
 
     /**
      * This method is called from within the constructor to initialize the form.

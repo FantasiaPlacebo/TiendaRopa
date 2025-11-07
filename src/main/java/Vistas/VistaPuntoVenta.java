@@ -4,17 +4,211 @@
  */
 package Vistas;
 
+
+import Modelo.Cliente;
+import Modelo.DetalleVenta;
+import Modelo.Venta;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import javax.swing.JOptionPane;
+
 /**
  *
  * @author Santo Tomas
  */
-public class VistaPuntoVenta extends javax.swing.JPanel {
+public class VistaPuntoVenta extends javax.swing.JPanel implements ActionListener {
+
+    // Lista para simular el carrito de compras
+    private ArrayList<DetalleVenta> carrito;
+    // Variable para simular el ID de la venta (en una BD sería autoincremental)
+    private int idVentaSimulada = 1;
 
     /**
      * Creates new form VistaPuntoVenta
      */
     public VistaPuntoVenta() {
         initComponents();
+        
+        // Inicializar el carrito
+        this.carrito = new ArrayList<>();
+        
+        // Añadir ActionListeners a los botones
+        bttnMas.addActionListener(this);
+        bttnMenos.addActionListener(this); // Aunque no le daremos lógica aún
+        bttnPagar.addActionListener(this);
+        bttnMetodo.addActionListener(this);
+        
+        // Botones de navegación
+        bttnVenta.addActionListener(this);
+        bttnInventario.addActionListener(this);
+        bttnRegistro.addActionListener(this);
+    }
+
+    
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        Object source = e.getSource();
+
+        try {
+            // --- AÑADIR PRODUCTO AL CARRITO ---
+            if (source == bttnMas) {
+                // 1. Validar y obtener datos del producto
+                if (txtCantidad.getText().isEmpty() || txtPrecio.getText().isEmpty() || txtCodigo.getText().isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "Debe ingresar Código, Cantidad y Precio del producto.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                
+                int idProducto = Integer.parseInt(txtCodigo.getText());
+                int cantidad = Integer.parseInt(txtCantidad.getText());
+                int precio = Integer.parseInt(txtPrecio.getText());
+                
+                if(cantidad <= 0 || precio <= 0){
+                    JOptionPane.showMessageDialog(this, "Cantidad y Precio deben ser mayores a cero.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                // 2. Crear el item de detalle
+                // (idVenta, idCliente, idProducto, cantidad, precio)
+                // Usamos 0 para idVenta e idCliente por ahora, se asignarán al pagar
+                DetalleVenta item = new DetalleVenta(0, 0, idProducto, cantidad, precio);
+                
+                // 3. Añadir al carrito
+                carrito.add(item);
+                
+                System.out.println("Producto añadido: ID " + idProducto + ", Cant: " + cantidad + ", Precio: " + precio);
+
+                // 4. Actualizar etiquetas de totales
+                actualizarTotales();
+
+                // 5. Limpiar campos de producto
+                limpiarCamposProducto();
+            } 
+            
+            // --- PAGAR LA VENTA ---
+            else if (source == bttnPagar) {
+                if (carrito.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "El carrito está vacío. Añada productos.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                // 1. Validar datos del cliente
+                if (txtRut.getText().isEmpty() || txtNombre.getText().isEmpty() || txtApellido.getText().isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "Debe ingresar al menos RUT, Nombre y Apellido del cliente.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                // --- SIMULACIÓN DE GUARDADO EN BD ---
+                
+                // 2. Simular creación de Cliente
+                // (idCliente, nombre, apellido, correo, telefono, direccion)
+                // TODO: Aquí deberías buscar si el cliente existe por RUT. Si no, crearlo.
+                Cliente cliente = new Cliente(
+                        1, // ID Simulada
+                        txtNombre.getText(),
+                        txtApellido.getText(),
+                        txtCorreo.getText(),
+                        (txtRut.getText().hashCode() % 100000), // Teléfono simulado
+                        txtDireccion.getText()
+                );
+                System.out.println("Cliente (simulado): " + cliente.getNombre() + " " + cliente.getApelido());
+
+                // 3. Simular creación de Venta
+                // (idVenta, idCliente, fecha)
+                Venta venta = new Venta(idVentaSimulada, cliente.getIdCliente(), new java.util.Date().toString());
+                System.out.println("Venta Creada (simulada): ID " + venta.getIdVenta());
+
+                // 4. Asignar IDs a los detalles y "guardarlos"
+                for(DetalleVenta item : carrito) {
+                    item.setIdVenta(venta.getIdVenta());
+                    item.setIdCliente(cliente.getIdCliente());
+                    // TODO: Aquí llamarías a DetalleVentaDAO.guardar(item)
+                    System.out.println("Guardando Detalle: VentaID " + item.getIdVenta() + ", ProdID " + item.getIdProducto() + ", Cant: " + item.getCantidadVenta());
+                }
+                
+                // 5. Mostrar confirmación y limpiar todo
+                JOptionPane.showMessageDialog(this, "Venta " + venta.getIdVenta() + " registrada exitosamente.\nTotal: " + lblResultadoTotal.getText(), "Venta Completada", JOptionPane.INFORMATION_MESSAGE);
+                
+                idVentaSimulada++; // Incrementar para la próxima venta
+                limpiarTodo();
+            } 
+            
+            // --- OTROS BOTONES ---
+            else if (source == bttnMetodo) {
+                String metodo = JOptionPane.showInputDialog(this, "Ingrese método de pago:", "Método de Pago", JOptionPane.PLAIN_MESSAGE);
+                if (metodo != null && !metodo.isEmpty()) {
+                    lblMetodoPago.setText(metodo);
+                }
+            } 
+            else if (source == bttnVenta || source == bttnInventario || source == bttnRegistro) {
+                // Lógica de navegación simulada
+                // TODO: Esta lógica debe manejarla el JFrame principal (Cambiando JPanels)
+                String vista = ((javax.swing.JButton) source).getText();
+                JOptionPane.showMessageDialog(this, "Navegando a la vista: " + vista);
+            }
+            
+        } catch (NumberFormatException nfe) {
+            JOptionPane.showMessageDialog(this, "Error: Ingrese solo números válidos para Código, Cantidad y Precio.", "Error de Formato", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Ocurrió un error inesperado: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
+        }
+    }
+    
+    /**
+     * Recalcula los totales (subtotal, iva, total) y actualiza las etiquetas
+     */
+    private void actualizarTotales() {
+        double subtotal = 0;
+        int cantidadItems = 0;
+        
+        for (DetalleVenta item : carrito) {
+            subtotal += item.getPrecioVenta() * item.getCantidadVenta();
+            cantidadItems += item.getCantidadVenta();
+        }
+        
+        double iva = subtotal * 0.19; // Asumiendo IVA del 19%
+        double total = subtotal + iva;
+        
+        // Actualizar etiquetas (Labels)
+        lblResultadoCantidad.setText(String.valueOf(cantidadItems));
+        lblResultadoPrecio.setText(String.format("$%.0f", subtotal)); // Precio = Subtotal
+        lblResultadoIva.setText(String.format("$%.0f", iva));
+        lblResultadoTotal.setText(String.format("$%.0f", total));
+    }
+
+    /**
+     * Limpia solo los campos de ingreso de producto
+     */
+    private void limpiarCamposProducto() {
+        txtCodigo.setText("");
+        txtPrenda.setText("");
+        txtCantidad.setText("");
+        txtPrecio.setText("");
+        txtTotal.setText(""); // Este campo no parece tener uso, pero lo limpiamos
+    }
+
+    /**
+     * Limpia todos los campos (cliente, producto y carrito)
+     */
+    private void limpiarTodo() {
+        // Limpiar carrito y totales
+        carrito.clear();
+        actualizarTotales();
+        
+        // Limpiar campos de cliente
+        txtNombre.setText("");
+        txtApellido.setText("");
+        txtRut.setText("");
+        txtCorreo.setText("");
+        txtDireccion.setText("");
+        
+        // Limpiar campos de producto
+        limpiarCamposProducto();
+        
+        // Resetear etiquetas
+        lblMetodoPago.setText("Metodo Pago");
+        lblResultadoVendedor.setText("--"); // No hemos usado este campo
     }
 
     /**

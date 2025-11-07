@@ -4,18 +4,75 @@
  */
 package Vistas;
 
+import Modelo.Usuario;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import javax.swing.JOptionPane;
+
 /**
  *
  * @author Santo Tomas
  */
-public class VistaRegistro extends javax.swing.JPanel {
+public class VistaRegistro extends javax.swing.JPanel implements ActionListener {
 
     /**
      * Creates new form VistaRegistro
      */
     public VistaRegistro() {
         initComponents();
+        
+        // Añadir este panel como listener para el botón
+        bttnRegistrar.addActionListener(this);
     }
+    
+    
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == bttnRegistrar) {
+            String nombres = txtNombres.getText();
+            String apellidos = txtApellidos.getText();
+            String rut = txtRut.getText();
+            String correo = txtCorreo2.getText();
+
+            // Validación simple
+            if (nombres.isEmpty() || apellidos.isEmpty() || rut.isEmpty() || correo.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Todos los campos son obligatorios.", "Error", JOptionPane.ERROR_MESSAGE);
+                return; // Detiene la ejecución si hay campos vacíos
+            }
+
+            // --- SIMULACIÓN DE LÓGICA DE REGISTRO ---
+            
+            // 1. Creamos el objeto Usuario con los datos de la vista
+            // Asumimos ID 0 (la BD debería generarlo) y rol "Cliente" por defecto
+            Usuario nuevoUsuario = new Usuario(0, nombres, apellidos, rut, correo, "Cliente");
+
+            // 2. Aquí llamarías a tu DAO para guardarlo
+            // Ejemplo: UsuarioDAO.registrarUsuario(nuevoUsuario);
+            
+            System.out.println("Intentando registrar nuevo usuario:");
+            System.out.println("Nombre: " + nuevoUsuario.getNombre() + " " + nuevoUsuario.getApellido());
+            System.out.println("RUT: " + nuevoUsuario.getRut());
+
+            // 3. Confirmación al usuario
+            JOptionPane.showMessageDialog(this, "Usuario " + nombres + " registrado exitosamente.", "Registro Completo", JOptionPane.INFORMATION_MESSAGE);
+
+            // 4. Limpiar campos después del registro
+            limpiarCampos();
+            
+            // TODO: Aquí deberías navegar de vuelta al Login o al Punto de Venta.
+        }
+    }
+
+    /**
+     * Método helper para limpiar los campos de texto
+     */
+    private void limpiarCampos() {
+        txtNombres.setText("");
+        txtApellidos.setText("");
+        txtRut.setText("");
+        txtCorreo2.setText("");
+    }
+    
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -36,6 +93,8 @@ public class VistaRegistro extends javax.swing.JPanel {
         txtCorreo2 = new javax.swing.JTextField();
         bttnRegistrar = new javax.swing.JButton();
         jLabel5 = new javax.swing.JLabel();
+        lblContraseña2 = new javax.swing.JLabel();
+        txtContraseña2 = new javax.swing.JTextField();
 
         lblNombres.setText("Nombres:");
 
@@ -49,6 +108,8 @@ public class VistaRegistro extends javax.swing.JPanel {
 
         jLabel5.setText("Registro");
 
+        lblContraseña2.setText("Contraseña:");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -56,33 +117,35 @@ public class VistaRegistro extends javax.swing.JPanel {
             .addGroup(layout.createSequentialGroup()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
+                        .addGap(157, 157, 157)
+                        .addComponent(bttnRegistrar))
+                    .addGroup(layout.createSequentialGroup()
                         .addGap(120, 120, 120)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                             .addGroup(layout.createSequentialGroup()
-                                .addComponent(lblCorreo2)
-                                .addGap(18, 18, 18)
-                                .addComponent(txtCorreo2))
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                                        .addComponent(lblApellidos)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED))
-                                    .addGroup(layout.createSequentialGroup()
-                                        .addComponent(lblRut)
-                                        .addGap(37, 37, 37)))
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                    .addComponent(txtApellidos)
-                                    .addComponent(txtRut, javax.swing.GroupLayout.DEFAULT_SIZE, 120, Short.MAX_VALUE)))
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(lblNombres)
+                                .addComponent(lblContraseña2)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(txtContraseña2))
+                            .addGroup(layout.createSequentialGroup()
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addComponent(lblNombres)
+                                        .addComponent(lblCorreo2)
+                                        .addComponent(lblApellidos, javax.swing.GroupLayout.Alignment.TRAILING))
+                                    .addComponent(lblRut))
+                                .addGap(18, 18, 18)
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(jLabel5)
-                                    .addComponent(txtNombres, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)))))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(157, 157, 157)
-                        .addComponent(bttnRegistrar)))
-                .addContainerGap(102, Short.MAX_VALUE))
+                                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                        .addComponent(txtCorreo2)
+                                        .addGroup(layout.createSequentialGroup()
+                                            .addGap(1, 1, 1)
+                                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                                .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                                    .addComponent(txtApellidos)
+                                                    .addComponent(txtRut, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                                .addComponent(txtNombres, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)))))))))
+                .addGap(89, 89, 89))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -105,7 +168,11 @@ public class VistaRegistro extends javax.swing.JPanel {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(lblCorreo2)
                     .addComponent(txtCorreo2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 72, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(lblContraseña2)
+                    .addComponent(txtContraseña2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 44, Short.MAX_VALUE)
                 .addComponent(bttnRegistrar)
                 .addGap(39, 39, 39))
         );
@@ -116,10 +183,12 @@ public class VistaRegistro extends javax.swing.JPanel {
     private javax.swing.JButton bttnRegistrar;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel lblApellidos;
+    private javax.swing.JLabel lblContraseña2;
     private javax.swing.JLabel lblCorreo2;
     private javax.swing.JLabel lblNombres;
     private javax.swing.JLabel lblRut;
     private javax.swing.JTextField txtApellidos;
+    private javax.swing.JTextField txtContraseña2;
     private javax.swing.JTextField txtCorreo2;
     private javax.swing.JTextField txtNombres;
     private javax.swing.JTextField txtRut;
