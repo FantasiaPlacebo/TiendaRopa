@@ -15,23 +15,16 @@ import java.sql.SQLException;
  */
 public class ConexionBD {
     
-    // Variables de conexión
-    private static final String URL = "jdbc:mysql://localhost:3306/tiendaropa"; // Cambia 'tiendaropa' por el nombre de tu BD
-    private static final String USUARIO = "root"; // Tu usuario de MySQL
-    private static final String PASSWORD = "tu_contraseña"; // Tu contraseña de MySQL
+    private static final String URL = "jdbc:mysql://localhost:3306/tiendaropa";
+    private static final String USUARIO = "root";
+    private static final String PASSWORD = "root";
     
     private static Connection conexion = null;
 
-    /**
-     * Método para obtener la conexión a la base de datos.
-     * Implementa un patrón Singleton simple.
-     */
     public static Connection getConexion() {
         try {
             if (conexion == null || conexion.isClosed()) {
-                // Cargar el driver
                 Class.forName("com.mysql.cj.jdbc.Driver");
-                // Establecer la conexión
                 conexion = DriverManager.getConnection(URL, USUARIO, PASSWORD);
                 System.out.println("Conexión exitosa a la BD.");
             }
@@ -42,9 +35,6 @@ public class ConexionBD {
         return conexion;
     }
 
-    /**
-     * Método para cerrar la conexión.
-     */
     public static void desconectar() {
         try {
             if (conexion != null && !conexion.isClosed()) {
