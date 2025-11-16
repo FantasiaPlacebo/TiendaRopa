@@ -7,7 +7,7 @@ CREATE TABLE productos (
     categoria VARCHAR(50),
     marca VARCHAR(50),
     precio DECIMAL(10,2),
-    stock INT
+    stock INT DEFAULT 0
 );
 
 CREATE TABLE usuarios (
@@ -15,16 +15,17 @@ CREATE TABLE usuarios (
 	nombreUsuario VARCHAR(100),
     apellidoUsuario VARCHAR(100),
     rut VARCHAR(10) UNIQUE,
-    correo VARCHAR(100),
-    rol VARCHAR(10)
+    correo VARCHAR(40),
+	contrasenaUsuario VARCHAR(20),
+    rol VARCHAR(20)
 );
 
 CREATE TABLE clientes (
 	idCliente INT AUTO_INCREMENT PRIMARY KEY,
-    nombreCliente VARCHAR(100),
-    apellidoCliente VARCHAR(100),
+    nombreCliente VARCHAR(15),
+    apellidoCliente VARCHAR(15),
     rut VARCHAR(10) UNIQUE,
-    correo VARCHAR(100),
+    correo VARCHAR(50),
     telefono VARCHAR(15),
     direccion VARCHAR(50)
 );
@@ -67,13 +68,13 @@ VALUES
 	('Cartera de Cuero', 'Accesorios', 'Guess', 49990.00, 20),
 	('Pijama de Invierno', 'Ropa Interior', 'Oysho', 21500.00, 35);
 
-INSERT INTO usuarios (nombreUsuario, apellidoUsuario, rut, correo, rol)
+INSERT INTO usuarios (nombreUsuario, apellidoUsuario, rut, correo, contrasenaUsuario, rol)
 VALUES
-	('Javier', 'Soto', '17123456-7', 'javier.s@tiendaropa.cl', 'Admin'),
-	('María', 'Pérez', '16876543-2', 'maria.p@tiendaropa.cl', 'Admin'),
-	('Carlos', 'López', '18001002-3', 'carlos.l@tiendaropa.cl', 'Vendedor'),
-	('Ana', 'Gómez', '19550330-4', 'ana.g@tiendaropa.cl', 'Vendedor'),
-	('Pedro', 'Muñoz', '20100200-5', 'pedro.m@tiendaropa.cl', 'Vendedor');
+	('Admin', 'Admin', '1-1', 'admin@tiendaropa.cl','hash1', 'Administrador'),
+	('María', 'Pérez', '16876543-2', 'maria.p@tiendaropa.cl','hash2', 'Administrador'),
+	('Carlos', 'López', '18001002-3', 'carlos.l@tiendaropa.cl','hash3', 'Vendedor'),
+	('Ana', 'Gómez', '19550330-4', 'ana.g@tiendaropa.cl','hash4', 'Vendedor'),
+	('Pedro', 'Muñoz', '20100200-5', 'pedro.m@tiendaropa.cl','hash5', 'Vendedor');
 
 INSERT INTO clientes (nombreCliente, apellidoCliente, rut, correo, telefono, direccion)
 VALUES
@@ -112,3 +113,9 @@ VALUES
 	(10, 10, 1, 28000.00),
 	(10, 13, 1, 9990.00),
 	(10, 9, 1, 5990.00);
+    
+select * from clientes;
+select * from detalleventa;
+select * from productos;
+select * from usuarios;
+select * from ventas;

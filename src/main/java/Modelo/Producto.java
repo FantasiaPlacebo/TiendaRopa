@@ -8,7 +8,7 @@ package Modelo;
  *
  * @author Santo Tomas
  */
-public class Productos {
+public class Producto {
     private int idProducto;
     private String nombre;
     private String categoria;
@@ -16,10 +16,10 @@ public class Productos {
     private int precio;
     private int stock;
 
-    public Productos() {
+    public Producto() {
     }
 
-    public Productos(int idProducto, String nombre, String categoria, String marca, int precio, int stock) {
+    public Producto(int idProducto, String nombre, String categoria, String marca, int precio, int stock) {
         this.idProducto = idProducto;
         this.nombre = nombre;
         this.categoria = categoria;
