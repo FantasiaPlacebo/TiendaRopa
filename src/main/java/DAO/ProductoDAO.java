@@ -11,14 +11,21 @@ import java.util.List;
  *
  * @author aacev
  */
+
 public interface ProductoDAO {
-    boolean insertar(Producto producto);
+    
+    boolean crearProducto(Producto producto);
+    Producto obtenerPorId(int idProducto);
     List<Producto> obtenerTodos();
-    Producto obtenerPorId(int id);
-    boolean actualizar(Producto producto);
-    boolean eliminar(int id);
+    boolean actualizarProducto(Producto producto);
+    boolean eliminarProducto(int idProducto);
     List<Producto> buscarPorNombre(String nombre);
-    public Producto buscarPorId(int idProducto);
+    List<Producto> buscarPorCategoria(String categoria);
+    List<Producto> buscarPorMarca(String marca);
+    List<Producto> buscarPorPrecio(double precioMin, double precioMax);
     boolean actualizarStock(int idProducto, int nuevoStock);
+    boolean reducirStock(int idProducto, int cantidad);
+    boolean aumentarStock(int idProducto, int cantidad);
     boolean existeProducto(String nombre, String marca);
+    int obtenerStock(int idProducto);
 }

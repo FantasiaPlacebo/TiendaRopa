@@ -13,7 +13,7 @@ public class Producto {
     private String nombre;
     private String categoria;
     private String marca;
-    private int precio;
+    private double precio;
     private int stock;
 
     public Producto() {
@@ -61,7 +61,7 @@ public class Producto {
     }
 
     public int getPrecio() {
-        return precio;
+        return (int) precio;
     }
 
     public void setPrecio(int precio) {

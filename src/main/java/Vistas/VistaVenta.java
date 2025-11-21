@@ -7,9 +7,23 @@ package Vistas;
 import DAO.ProductoDAO;
 import DAO.ProductoDAOImpl;
 import Modelo.Producto;
+import Modelo.Usuario;
+import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JOptionPane;
-
+import javax.swing.table.DefaultTableModel;
+import DAO.VentaDAO;
+import DAO.VentaDAOImpl;
+import DAO.DetalleVentaDAO;
+import DAO.DetalleVentaDAOImpl;
+import Modelo.Venta;
+import Modelo.DetalleVenta;
+import Conexion.Conn;
+import DAO.ClienteDAO;
+import DAO.ClienteDAOImpl;
+import Modelo.Cliente;
+import java.awt.event.ActionEvent;
+import java.sql.Connection;
 /**
  *
  * @author Santo Tomas
@@ -17,31 +31,70 @@ import javax.swing.JOptionPane;
 public class VistaVenta extends javax.swing.JFrame {
 
     private ProductoDAO productoDAO;
+    private ClienteDAO clienteDAO;
+    private VentaDAO ventaDAO;
+    private DetalleVentaDAO detalleVentaDAO;
+    private DefaultTableModel modeloTabla;
+    private List<Producto> productosEnTabla;
+    private Usuario usuarioActual;
     
-    public VistaVenta() {
+    public VistaVenta(Usuario usuario) {
         initComponents();
         this.setLocationRelativeTo(null);
-        productoDAO = new ProductoDAOImpl();
+        this.usuarioActual = usuario;
+        Connection conexion = Conn.conectar();
+        productoDAO = new ProductoDAOImpl(conexion);
+        clienteDAO = new ClienteDAOImpl(conexion);
+        ventaDAO = new VentaDAOImpl(conexion);
+        detalleVentaDAO = new DetalleVentaDAOImpl(conexion);
+        
+        productosEnTabla = new ArrayList<>();
+        inicializarTabla();
         cargarProductosEnComboBox();
         configurarEventoComboBox();
+        lblVendedor.setText(usuario.getNombre());
+        esAdmin(usuario);
+        bttnAceptar.addActionListener(e -> guardarVenta());
+    }
+    private void esAdmin(Usuario usuario) {
+        if (usuario.getRoles().equals("Administrador")){
+            bttnRegistro.setVisible(true);
+        } else{
+            bttnRegistro.setVisible(false);
+        }
+    }
+
+    private void inicializarTabla() {
+
+        modeloTabla = new DefaultTableModel(
+            new Object[][]{},
+            new String[]{"ID", "Producto", "Cantidad", "Precio Unitario", "Subtotal"}
+        ) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                // Hacer editable solo la columna de cantidad
+                return column == 2;
+            }
+        };
+        tableProductos.setModel(modeloTabla);
     }
 
     private void cargarProductosEnComboBox() {
-            try {
-                cmbNombreProductos.removeAllItems();
-                cmbNombreProductos.addItem("-- Seleccione un producto --");
+        try {
+            cmbNombreProductos.removeAllItems();
+            cmbNombreProductos.addItem("-- Seleccione un producto --");
 
-                List<Producto> productos = productoDAO.obtenerTodos();
+            List<Producto> productos = productoDAO.obtenerTodos();
 
-                for (Producto producto : productos) {
-                    String item = producto.getNombre() + " - " + producto.getMarca();
-                    cmbNombreProductos.addItem(item);
-                }
-
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Error al cargar productos: " + e.getMessage());
+            for (Producto producto : productos) {
+                String item = producto.getNombre() + " - " + producto.getMarca();
+                cmbNombreProductos.addItem(item);
             }
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error al cargar productos: " + e.getMessage());
         }
+    }
     
     private void cargarPrecioProducto() {
         try {
@@ -96,13 +149,475 @@ public class VistaVenta extends javax.swing.JFrame {
 
         } catch (NumberFormatException e) {
             lblTotalProducto.setText("$0");
+        }
     }
-}
     
     private void configurarEventoComboBox() {
         cmbNombreProductos.addActionListener(e -> {
             cargarPrecioProducto();
         });
+    }
+    
+        private void guardarVenta() {
+        try {
+            // Validar que haya productos en la tabla
+            if (modeloTabla.getRowCount() == 0) {
+                JOptionPane.showMessageDialog(this, 
+                    "No hay productos en la venta", 
+                    "Venta vacía", 
+                    JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            // Validar método de pago
+            if (cbMetodoDePago.getSelectedItem() == null) {
+                JOptionPane.showMessageDialog(this, 
+                    "Seleccione un método de pago", 
+                    "Método de pago requerido", 
+                    JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            // Deshabilitar botón durante el proceso
+            bttnAceptar.setEnabled(false);
+
+            // 1. Procesar cliente (crear o buscar)
+            int idCliente = procesarCliente();
+
+            // 2. Calcular total de la venta
+            double totalVenta = calcularTotalVenta();
+
+            // 3. Crear objeto Venta
+            Venta venta = new Venta(idCliente, usuarioActual.getIdUsuario(), totalVenta);
+
+            // 4. Guardar venta en la base de datos
+            int idVenta = ventaDAO.crearVenta(venta);
+
+            if (idVenta == -1) {
+                throw new Exception("Error al crear la venta en la base de datos");
+            }
+
+            // 5. Guardar detalles de la venta
+            boolean detallesGuardados = guardarDetallesVenta(idVenta);
+
+            if (!detallesGuardados) {
+                throw new Exception("Error al guardar los detalles de la venta");
+            }
+
+            // 6. Actualizar stock de productos
+            boolean stockActualizado = actualizarStockProductos();
+
+            if (!stockActualizado) {
+                throw new Exception("Error al actualizar el stock de productos");
+            }
+
+            // 7. Mostrar comprobante y limpiar
+            mostrarComprobante(idVenta, totalVenta);
+            limpiarVenta();
+
+            JOptionPane.showMessageDialog(this, 
+                "Venta guardada exitosamente\nN° de Venta: " + idVenta, 
+                "Venta Exitosa", 
+                JOptionPane.INFORMATION_MESSAGE);
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, 
+                "Error al guardar la venta: " + e.getMessage(), 
+                "Error", 
+                JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        } finally {
+            bttnAceptar.setEnabled(true);
+        }
+    }
+
+    /**
+     * Procesa el cliente (busca por RUT o crea uno nuevo)
+     */
+    private int procesarCliente() {
+        String rut = txtRutCliente.getText().trim();
+        String nombre = txtNombreCliente.getText().trim();
+        String apellido = txtApellidoCliente.getText().trim();
+        String correo = txtCorreoCliente.getText().trim();
+        String direccion = txtDireccionCliente.getText().trim();
+
+        // Si no hay datos de cliente, venta sin cliente
+        if (rut.isEmpty() && nombre.isEmpty() && apellido.isEmpty()) {
+            return 0; // idCliente = 0 significa NULL en la BD
+        }
+
+        // Buscar cliente por RUT si existe
+        if (!rut.isEmpty()) {
+            Cliente clienteExistente = clienteDAO.obtenerPorRut(rut);
+            if (clienteExistente != null) {
+                return clienteExistente.getIdCliente();
+            }
+        }
+
+        // Crear nuevo cliente
+        try {
+            Cliente nuevoCliente = new Cliente();
+            nuevoCliente.setNombre(nombre);
+            nuevoCliente.setApelido(apellido);
+            nuevoCliente.setRut(rut);
+            nuevoCliente.setCorreo(correo.isEmpty() ? null : correo);
+            nuevoCliente.setDireccion(direccion.isEmpty() ? null : direccion);
+            
+            // Para el teléfono, podrías agregar un campo en la interfaz
+            nuevoCliente.setTelefono(0); // Valor por defecto
+
+            if (clienteDAO.crearCliente(nuevoCliente)) {
+                // Obtener el ID del cliente recién creado
+                Cliente clienteCreado = clienteDAO.obtenerPorRut(rut);
+                return clienteCreado != null ? clienteCreado.getIdCliente() : 0;
+            }
+        } catch (Exception e) {
+            System.err.println("Error al crear cliente: " + e.getMessage());
+        }
+
+        return 0; // Si falla, venta sin cliente
+    }
+
+
+    private double calcularTotalVenta() {
+        double total = 0;
+        for (int i = 0; i < modeloTabla.getRowCount(); i++) {
+            Object subtotalObj = modeloTabla.getValueAt(i, 4); // Columna subtotal
+
+            if (subtotalObj instanceof Integer) {
+                total += ((Integer) subtotalObj).doubleValue();
+            } else if (subtotalObj instanceof Double) {
+                total += (Double) subtotalObj;
+            } else {
+                total += Double.parseDouble(subtotalObj.toString());
+            }
+        }
+        return total;
+    }
+
+    /**
+     * Guarda los detalles de la venta en la base de datos
+     */
+
+    private boolean guardarDetallesVenta(int idVenta) {
+        List<DetalleVenta> detalles = new ArrayList<>();
+
+        for (int i = 0; i < modeloTabla.getRowCount(); i++) {
+            int idProducto = (int) modeloTabla.getValueAt(i, 0); // Columna ID
+            int cantidad = (int) modeloTabla.getValueAt(i, 2);   // Columna Cantidad
+
+            // CORRECCIÓN: No hacer cast directo, convertir apropiadamente
+            Object subtotalObj = modeloTabla.getValueAt(i, 4); // Columna Subtotal
+            double subtotal;
+
+            if (subtotalObj instanceof Integer) {
+                subtotal = ((Integer) subtotalObj).doubleValue();
+            } else if (subtotalObj instanceof Double) {
+                subtotal = (Double) subtotalObj;
+            } else {
+                // Si es otro tipo, convertirlo a String y luego a double
+                subtotal = Double.parseDouble(subtotalObj.toString());
+            }
+
+            DetalleVenta detalle = new DetalleVenta();
+            detalle.setIdVenta(idVenta);
+            detalle.setIdProducto(idProducto);
+            detalle.setCantidadVenta(cantidad);
+            detalle.setPrecioVenta((int) subtotal); // Cast a int si es necesario
+
+            detalles.add(detalle);
+        }
+
+        return detalleVentaDAO.crearDetallesVenta(detalles);
+    }
+
+    /**
+     * Actualiza el stock de los productos vendidos
+     */
+    private boolean actualizarStockProductos() {
+        try {
+            for (int i = 0; i < modeloTabla.getRowCount(); i++) {
+                int idProducto = (int) modeloTabla.getValueAt(i, 0);
+                int cantidadVendida = (int) modeloTabla.getValueAt(i, 2);
+
+                // Verificar stock disponible
+                Producto producto = productoDAO.obtenerPorId(idProducto);
+                if (producto != null) {
+                    if (producto.getStock() < cantidadVendida) {
+                        throw new Exception("Stock insuficiente para: " + producto.getNombre());
+                    }
+                }
+
+                // Usar reducirStock directamente (más eficiente)
+                boolean stockActualizado = productoDAO.reducirStock(idProducto, cantidadVendida);
+                if (!stockActualizado) {
+                    throw new Exception("Error al actualizar stock para producto ID: " + idProducto);
+                }
+            }
+            return true;
+        } catch (Exception e) {
+            throw new RuntimeException("Error al actualizar stock: " + e.getMessage());
+        }
+    }
+
+
+    private void mostrarComprobante(int idVenta, double totalVenta) {
+        StringBuilder comprobante = new StringBuilder();
+        comprobante.append("=== COMPROBANTE DE VENTA ===\n");
+        comprobante.append("N° Venta: ").append(idVenta).append("\n");
+        comprobante.append("Fecha: ").append(new java.util.Date()).append("\n");
+        comprobante.append("Vendedor: ").append(usuarioActual.getNombre()).append("\n");
+        comprobante.append("Método de Pago: ").append(cbMetodoDePago.getSelectedItem()).append("\n");
+        comprobante.append("\n--- Productos ---\n");
+
+        for (int i = 0; i < modeloTabla.getRowCount(); i++) {
+            String producto = (String) modeloTabla.getValueAt(i, 1);
+            int cantidad = (int) modeloTabla.getValueAt(i, 2);
+
+            // CORRECCIÓN: Convertir apropiadamente
+            Object precioObj = modeloTabla.getValueAt(i, 3);
+            Object subtotalObj = modeloTabla.getValueAt(i, 4);
+
+            double precio, subtotal;
+
+            if (precioObj instanceof Integer) {
+                precio = ((Integer) precioObj).doubleValue();
+            } else {
+                precio = (Double) precioObj;
+            }
+
+            if (subtotalObj instanceof Integer) {
+                subtotal = ((Integer) subtotalObj).doubleValue();
+            } else {
+                subtotal = (Double) subtotalObj;
+            }
+
+            comprobante.append(String.format("%s x%d - $%.0f\n", producto, cantidad, subtotal));
+        }
+
+        comprobante.append("\nTOTAL: $").append(totalVenta).append("\n");
+        comprobante.append("=============================");
+
+        // Mostrar en un diálogo o puedes imprimirlo
+        JOptionPane.showMessageDialog(this, 
+            comprobante.toString(), 
+            "Comprobante de Venta", 
+            JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private double convertirADouble(Object numero) {
+        if (numero instanceof Integer) {
+            return ((Integer) numero).doubleValue();
+        } else if (numero instanceof Double) {
+            return (Double) numero;
+        } else if (numero instanceof Long) {
+            return ((Long) numero).doubleValue();
+        } else if (numero instanceof Float) {
+            return ((Float) numero).doubleValue();
+        } else {
+            return Double.parseDouble(numero.toString());
+        }
+    }
+    
+    private void limpiarVenta() {
+        // Limpiar campos del cliente
+        txtNombreCliente.setText("");
+        txtApellidoCliente.setText("");
+        txtRutCliente.setText("");
+        txtCorreoCliente.setText("");
+        txtDireccionCliente.setText("");
+
+        // Limpiar tabla de productos
+        modeloTabla.setRowCount(0);
+        productosEnTabla.clear();
+
+        // Limpiar campos de productos
+        cmbNombreProductos.setSelectedIndex(0);
+        txtCantidadProducto.setText("1");
+        lblPrecioProducto.setText("-");
+        lblTotalProducto.setText("$0");
+
+        // Limpiar totales
+        lblPrecioSinIVA.setText(":");
+        lblIVA.setText(":");
+        lblTotal.setText(":");
+
+        // Resetear método de pago
+        cbMetodoDePago.setSelectedIndex(0);
+
+        // Poner foco en el primer campo
+        txtNombreCliente.requestFocus();
+    }
+ 
+    private void agregarProductoATabla() {
+        try {
+            // Validar que se haya seleccionado un producto
+            if (cmbNombreProductos.getSelectedIndex() == 0) {
+                JOptionPane.showMessageDialog(this, 
+                    "Por favor, seleccione un producto", 
+                    "Producto no seleccionado", 
+                    JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            // Validar cantidad
+            String cantidadTexto = txtCantidadProducto.getText().trim();
+            if (cantidadTexto.isEmpty() || Integer.parseInt(cantidadTexto) <= 0) {
+                JOptionPane.showMessageDialog(this, 
+                    "Por favor, ingrese una cantidad válida", 
+                    "Cantidad inválida", 
+                    JOptionPane.WARNING_MESSAGE);
+                txtCantidadProducto.requestFocus();
+                return;
+            }
+
+            // Obtener el producto seleccionado
+            String productoSeleccionado = cmbNombreProductos.getSelectedItem().toString();
+            String nombreProducto = productoSeleccionado.split(" - ")[0].trim();
+            List<Producto> productos = productoDAO.buscarPorNombre(nombreProducto);
+
+            if (productos.isEmpty()) {
+                JOptionPane.showMessageDialog(this, 
+                    "Producto no encontrado", 
+                    "Error", 
+                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            Producto producto = productos.get(0);
+            int cantidad = Integer.parseInt(cantidadTexto);
+
+            // Validar stock disponible
+            if (producto.getStock() < cantidad) {
+                JOptionPane.showMessageDialog(this, 
+                    "Stock insuficiente. Stock disponible: " + producto.getStock(), 
+                    "Stock insuficiente", 
+                    JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            int precio = producto.getPrecio();
+            int subtotal = precio * cantidad;
+
+            // Verificar si el producto ya está en la tabla
+            int filaExistente = buscarProductoEnTabla(producto.getIdProducto());
+
+            if (filaExistente != -1) {
+                // Actualizar cantidad y subtotal si el producto ya existe
+                int cantidadActual = (int) modeloTabla.getValueAt(filaExistente, 2);
+                int nuevaCantidad = cantidadActual + cantidad;
+
+                // Validar stock para la cantidad actualizada
+                if (producto.getStock() < nuevaCantidad) {
+                    JOptionPane.showMessageDialog(this, 
+                        "Stock insuficiente al sumar cantidades. Stock disponible: " + producto.getStock(), 
+                        "Stock insuficiente", 
+                        JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                int nuevoSubtotal = precio * nuevaCantidad;
+
+                modeloTabla.setValueAt(nuevaCantidad, filaExistente, 2);
+                modeloTabla.setValueAt(nuevoSubtotal, filaExistente, 4);
+            } else {
+                // Agregar nuevo producto a la tabla
+                Object[] fila = {
+                    producto.getIdProducto(),
+                    producto.getNombre() + " - " + producto.getMarca(),
+                    cantidad,
+                    precio,
+                    subtotal
+                };
+                modeloTabla.addRow(fila);
+                productosEnTabla.add(producto);
+            }
+
+            // Actualizar totales
+            actualizarTotalesVenta();
+
+            // Limpiar campos para nuevo producto
+            cmbNombreProductos.setSelectedIndex(0);
+            txtCantidadProducto.setText("1");
+            lblPrecioProducto.setText("-");
+            lblTotalProducto.setText("$0");
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, 
+                "Error al agregar producto: " + e.getMessage(), 
+                "Error", 
+                JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Método para buscar si un producto ya está en la tabla
+     */
+    private int buscarProductoEnTabla(int idProducto) {
+        for (int i = 0; i < modeloTabla.getRowCount(); i++) {
+            int idEnTabla = (int) modeloTabla.getValueAt(i, 0);
+            if (idEnTabla == idProducto) {
+                return i;
+            }
+        }
+        return -1;
+    }
+    
+
+    private void actualizarTotalesVenta() {
+        double subtotalVenta = 0;
+
+        for (int i = 0; i < modeloTabla.getRowCount(); i++) {
+            Object subtotalObj = modeloTabla.getValueAt(i, 4);
+
+            if (subtotalObj instanceof Integer) {
+                subtotalVenta += ((Integer) subtotalObj).doubleValue();
+            } else if (subtotalObj instanceof Double) {
+                subtotalVenta += (Double) subtotalObj;
+            } else {
+                subtotalVenta += Double.parseDouble(subtotalObj.toString());
+            }
+        }
+
+        double iva = subtotalVenta * 0.19; // 19% de IVA
+        double totalVenta = subtotalVenta + iva;
+
+        // Actualizar etiquetas
+        lblPrecioSinIVA.setText("$" + (int) subtotalVenta);
+        lblIVA.setText("$" + (int) iva);
+        lblTotal.setText("$" + (int) totalVenta);
+    }
+    
+    /**
+     * Método para eliminar producto seleccionado de la tabla
+     */
+    private void eliminarProductoDeTabla() {
+        int filaSeleccionada = tableProductos.getSelectedRow();
+        
+        if (filaSeleccionada == -1) {
+            JOptionPane.showMessageDialog(this, 
+                "Por favor, seleccione un producto de la tabla para eliminar", 
+                "No hay producto seleccionado", 
+                JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        int confirmacion = JOptionPane.showConfirmDialog(this,
+            "¿Está seguro de que desea eliminar este producto de la venta?",
+            "Confirmar eliminación",
+            JOptionPane.YES_NO_OPTION);
+        
+        if (confirmacion == JOptionPane.YES_OPTION) {
+            modeloTabla.removeRow(filaSeleccionada);
+            productosEnTabla.remove(filaSeleccionada);
+            actualizarTotalesVenta();
+            
+            JOptionPane.showMessageDialog(this, 
+                "Producto eliminado correctamente", 
+                "Éxito", 
+                JOptionPane.INFORMATION_MESSAGE);
+        }
     }
     
     @SuppressWarnings("unchecked")
@@ -128,6 +643,7 @@ public class VistaVenta extends javax.swing.JFrame {
         layoutBotones = new javax.swing.JPanel();
         bttnInventario = new javax.swing.JButton();
         bttnRegistro = new javax.swing.JButton();
+        bttnHistorial = new javax.swing.JButton();
         lblProductos = new javax.swing.JLabel();
         layoutProductos = new javax.swing.JPanel();
         layoutDatosProductos = new javax.swing.JPanel();
@@ -277,30 +793,51 @@ public class VistaVenta extends javax.swing.JFrame {
                     .addComponent(txtRutCliente, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(txtCorreoCliente, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(txtDireccionCliente, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(10, Short.MAX_VALUE))
         );
 
         bttnInventario.setText("Inventario");
+        bttnInventario.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                bttnInventarioActionPerformed(evt);
+            }
+        });
 
         bttnRegistro.setText("Registro");
+        bttnRegistro.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                bttnRegistroActionPerformed(evt);
+            }
+        });
+
+        bttnHistorial.setText("Historial");
+        bttnHistorial.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                bttnHistorialActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout layoutBotonesLayout = new javax.swing.GroupLayout(layoutBotones);
         layoutBotones.setLayout(layoutBotonesLayout);
         layoutBotonesLayout.setHorizontalGroup(
             layoutBotonesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layoutBotonesLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(layoutBotonesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(bttnInventario, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(bttnRegistro, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addContainerGap())
+                .addContainerGap()
+                .addGroup(layoutBotonesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                    .addComponent(bttnHistorial, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addGroup(layoutBotonesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                        .addComponent(bttnRegistro, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(bttnInventario, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layoutBotonesLayout.setVerticalGroup(
             layoutBotonesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layoutBotonesLayout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(bttnInventario)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(bttnHistorial)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(bttnRegistro)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
@@ -320,10 +857,11 @@ public class VistaVenta extends javax.swing.JFrame {
             layoutDatosClienteLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layoutDatosClienteLayout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layoutDatosClienteLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                .addGroup(layoutDatosClienteLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(layoutBotones, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(layoutDatos, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addGroup(layoutDatosClienteLayout.createSequentialGroup()
+                        .addComponent(layoutDatos, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
         );
 
         lblProductos.setText("Productos");
@@ -367,10 +905,20 @@ public class VistaVenta extends javax.swing.JFrame {
         bttnEliminarProducto.setBackground(new java.awt.Color(255, 0, 51));
         bttnEliminarProducto.setText("  -  ");
         bttnEliminarProducto.setBorder(javax.swing.BorderFactory.createBevelBorder(javax.swing.border.BevelBorder.RAISED));
+        bttnEliminarProducto.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                bttnEliminarProductoActionPerformed(evt);
+            }
+        });
 
         bttnAgregarProducto.setBackground(new java.awt.Color(102, 204, 0));
         bttnAgregarProducto.setText("  +  ");
         bttnAgregarProducto.setBorder(javax.swing.BorderFactory.createBevelBorder(javax.swing.border.BevelBorder.RAISED));
+        bttnAgregarProducto.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                bttnAgregarProductoActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout layoutBotonesPLayout = new javax.swing.GroupLayout(layoutBotonesP);
         layoutBotonesP.setLayout(layoutBotonesPLayout);
@@ -507,7 +1055,7 @@ public class VistaVenta extends javax.swing.JFrame {
             layoutTablaLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layoutTablaLayout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(scrollTabla, javax.swing.GroupLayout.DEFAULT_SIZE, 487, Short.MAX_VALUE)
+                .addComponent(scrollTabla, javax.swing.GroupLayout.DEFAULT_SIZE, 489, Short.MAX_VALUE)
                 .addContainerGap())
         );
         layoutTablaLayout.setVerticalGroup(
@@ -660,7 +1208,7 @@ public class VistaVenta extends javax.swing.JFrame {
                         .addComponent(layoutTabla, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addGap(18, 18, 18)
                         .addComponent(layoutDetalle, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(layoutDatosCliente, javax.swing.GroupLayout.PREFERRED_SIZE, 737, Short.MAX_VALUE))
+                    .addComponent(layoutDatosCliente, javax.swing.GroupLayout.PREFERRED_SIZE, 739, Short.MAX_VALUE))
                 .addContainerGap())
         );
         layoutPrincipalLayout.setVerticalGroup(
@@ -681,7 +1229,7 @@ public class VistaVenta extends javax.swing.JFrame {
                     .addComponent(layoutTabla, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(layoutPrincipalLayout.createSequentialGroup()
                         .addComponent(layoutDetalle, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, Short.MAX_VALUE)))
+                        .addGap(0, 12, Short.MAX_VALUE)))
                 .addContainerGap())
         );
 
@@ -792,19 +1340,35 @@ public class VistaVenta extends javax.swing.JFrame {
         recalcularTotal();
     }//GEN-LAST:event_txtCantidadProductoKeyReleased
 
-    public static void main(String args[]) {
+    private void bttnAgregarProductoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bttnAgregarProductoActionPerformed
+        agregarProductoATabla();
+    }//GEN-LAST:event_bttnAgregarProductoActionPerformed
 
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                new VistaVenta().setVisible(true);
-            }
-        });
-    }
+    private void bttnEliminarProductoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bttnEliminarProductoActionPerformed
+        eliminarProductoDeTabla();
+    }//GEN-LAST:event_bttnEliminarProductoActionPerformed
+
+    private void bttnRegistroActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bttnRegistroActionPerformed
+        VistaRegistro registro = new VistaRegistro();
+        registro.setVisible(true);
+    }//GEN-LAST:event_bttnRegistroActionPerformed
+
+    private void bttnInventarioActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bttnInventarioActionPerformed
+        VistaInventario inventario = new VistaInventario();
+        inventario.setVisible(true);
+    }//GEN-LAST:event_bttnInventarioActionPerformed
+
+    private void bttnHistorialActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bttnHistorialActionPerformed
+        VistaHistorial historial = new VistaHistorial();
+        historial.setVisible(true);
+    }//GEN-LAST:event_bttnHistorialActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton bttnAceptar;
     private javax.swing.JButton bttnAgregarProducto;
     private javax.swing.JButton bttnEliminarProducto;
+    private javax.swing.JButton bttnHistorial;
     private javax.swing.JButton bttnInventario;
     private javax.swing.JButton bttnRegistro;
     private javax.swing.JComboBox<String> cbMetodoDePago;

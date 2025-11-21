@@ -3,6 +3,12 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
  */
 package Vistas;
+import Conexion.Conn;
+import DAO.UsuarioDAO;
+import DAO.UsuarioDAOImpl;
+import Modelo.Usuario;
+import java.sql.Connection;
+import javax.swing.JOptionPane;
 
 /**
  *
@@ -10,6 +16,9 @@ package Vistas;
  */
 public class VistaLogin extends javax.swing.JFrame {
 
+    private Connection conexion;
+    private UsuarioDAO usuarioDAO;
+    
     /**
      * Creates new form VistaLogin
      */
@@ -17,6 +26,15 @@ public class VistaLogin extends javax.swing.JFrame {
         initComponents();
         this.setSize(340, 220);
         this.setLocationRelativeTo(null);
+        conexion = Conn.conectar();
+        if (conexion != null) {
+            usuarioDAO = new UsuarioDAOImpl(conexion);
+        } else {
+            JOptionPane.showMessageDialog(this, 
+                "Error al conectar con la base de datos", 
+                "Error de conexión", 
+                JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     /**
@@ -165,11 +183,11 @@ public class VistaLogin extends javax.swing.JFrame {
     }//GEN-LAST:event_txtCorreoActionPerformed
 
     private void bttnIngresarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bttnIngresarActionPerformed
-        // TODO add your handling code here:
+        realizarLogin();
     }//GEN-LAST:event_bttnIngresarActionPerformed
 
     private void txtContrasenaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtContrasenaActionPerformed
-
+        realizarLogin();
     }//GEN-LAST:event_txtContrasenaActionPerformed
 
     private void txtContrasenaKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtContrasenaKeyTyped
@@ -186,9 +204,78 @@ public class VistaLogin extends javax.swing.JFrame {
     }//GEN-LAST:event_txtCorreoKeyTyped
 
     private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
-
+        txtCorreo.requestFocus();
     }//GEN-LAST:event_formWindowOpened
 
+    private void realizarLogin() {
+        if (conexion == null) {
+            JOptionPane.showMessageDialog(this, "No hay conexión a la base de datos", "Error de conexión", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        String correo = txtCorreo.getText().trim();
+        String contrasena = new String(txtContrasena.getPassword());
+        
+        if (correo.isEmpty() || contrasena.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Por favor, complete todos los campos", "Campos incompletos", JOptionPane.WARNING_MESSAGE);
+            txtCorreo.requestFocus();
+            return;
+        }
+        
+        if (!correo.contains("@") || !correo.contains(".")) {
+            JOptionPane.showMessageDialog(this, 
+                "Por favor, ingrese un correo válido", 
+                "Correo inválido", 
+                JOptionPane.WARNING_MESSAGE);
+            txtCorreo.selectAll();
+            txtCorreo.requestFocus();
+            return;
+        }
+        
+        try {
+            bttnIngresar.setEnabled(false);
+            
+            Usuario usuario = usuarioDAO.autenticar(correo, contrasena);
+            
+            if (usuario != null) {
+                abrirVistaVenta(usuario);
+                
+            } else {
+                JOptionPane.showMessageDialog(this, "Correo o contraseña incorrectos", "Error de autenticación", JOptionPane.ERROR_MESSAGE);
+                
+                txtContrasena.setText("");
+                txtCorreo.selectAll();
+                txtCorreo.requestFocus();
+            }
+            
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error al verificar credenciales: " + e.getMessage(), "Error del sistema", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        } finally {
+            bttnIngresar.setEnabled(true);
+        }
+    }
+    
+    /**
+     * Método para abrir VistaVenta con el usuario logeado
+     */
+    private void abrirVistaVenta(Usuario usuario) {
+        try {
+            this.setVisible(false);
+            
+            VistaVenta vistaVenta = new VistaVenta(usuario);
+            vistaVenta.setVisible(true);
+
+            this.dispose();
+            
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, 
+                "Error al abrir la ventana de ventas: " + e.getMessage(), 
+                "Error", 
+                JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
     /**
      * @param args the command line arguments
      */
