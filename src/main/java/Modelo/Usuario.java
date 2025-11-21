@@ -14,17 +14,30 @@ public class Usuario {
     private String apellido;
     private String rut;
     private String correo;
+    private String contrasenaUsuario; // Nuevo campo
     private String roles;
 
     public Usuario() {
     }
 
-    public Usuario(int idUsuario, String nombre, String apellido, String rut, String correo, String roles) {
+    // Constructor completo
+    public Usuario(int idUsuario, String nombre, String apellido, String rut, String correo, String contrasenaUsuario, String roles) {
         this.idUsuario = idUsuario;
         this.nombre = nombre;
         this.apellido = apellido;
         this.rut = rut;
         this.correo = correo;
+        this.contrasenaUsuario = contrasenaUsuario;
+        this.roles = roles;
+    }
+
+    // Constructor sin ID (para nuevos usuarios)
+    public Usuario(String nombre, String apellido, String rut, String correo, String contrasenaUsuario, String roles) {
+        this.nombre = nombre;
+        this.apellido = apellido;
+        this.rut = rut;
+        this.correo = correo;
+        this.contrasenaUsuario = contrasenaUsuario;
         this.roles = roles;
     }
 
@@ -68,6 +81,14 @@ public class Usuario {
         this.correo = correo;
     }
 
+    public String getContrasenaUsuario() {
+        return contrasenaUsuario;
+    }
+
+    public void setContrasenaUsuario(String contrasenaUsuario) {
+        this.contrasenaUsuario = contrasenaUsuario;
+    }
+
     public String getRoles() {
         return roles;
     }
@@ -76,5 +97,15 @@ public class Usuario {
         this.roles = roles;
     }
     
-    
+    @Override
+    public String toString() {
+        return "Usuario{" +
+                "idUsuario=" + idUsuario +
+                ", nombre='" + nombre + '\'' +
+                ", apellido='" + apellido + '\'' +
+                ", rut='" + rut + '\'' +
+                ", correo='" + correo + '\'' +
+                ", roles='" + roles + '\'' +
+                '}';
+    }
 }

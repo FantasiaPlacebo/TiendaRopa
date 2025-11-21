@@ -4,6 +4,8 @@
 
 package com.mycompany.proyectosoftware;
 
+import Vistas.VistaLogin;
+
 /**
  *
  * @author Santo Tomas
@@ -11,7 +13,8 @@ package com.mycompany.proyectosoftware;
 public class ProyectoSoftware {
 
     public static void main(String[] args) {
-        System.out.println("Hello World!");
+        VistaLogin login = new VistaLogin();
+        login.setVisible(true);
     }
     
 }

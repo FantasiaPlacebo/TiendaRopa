@@ -1,67 +1,41 @@
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JPanel.java to edit this template
+ * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
  */
 package Vistas;
-
-import Controlador.UsuarioDAO;
+import Conexion.Conn;
+import DAO.UsuarioDAO;
+import DAO.UsuarioDAOImpl;
 import Modelo.Usuario;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.sql.Connection;
 import javax.swing.JOptionPane;
-
-
 
 /**
  *
  * @author Santo Tomas
  */
-public class VistaLogin extends javax.swing.JPanel implements ActionListener {
+public class VistaLogin extends javax.swing.JFrame {
 
-    private MainFrame mainFrame;
-    
-    // Instancia del DAO
+    private Connection conexion;
     private UsuarioDAO usuarioDAO;
-
+    
     /**
      * Creates new form VistaLogin
      */
-    public VistaLogin(MainFrame aThis) {
-        this.mainFrame = mainFrame; // Guardar la referencia
+    public VistaLogin() {
         initComponents();
-        this.usuarioDAO = new UsuarioDAO();
-        bttnIngresar.addActionListener(this);
-    }
-
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == bttnIngresar) {
-            String correo = txtCorreo.getText();
-            String contraseña = new String(txtContraseña.getPassword());
-
-            // Validación de campos vacíos
-            if (correo.isEmpty() || contraseña.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Por favor, ingrese correo y contraseña.", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            
-            // --- LÓGICA DE LOGIN CON BASE DE DATOS ---
-            Usuario usuario = usuarioDAO.validarUsuario(correo, contraseña);
-            
-            if (usuario != null) {
-                // ¡Éxito! Usuario encontrado
-                JOptionPane.showMessageDialog(this, "¡Bienvenido " + usuario.getNombre() + "!", "Inicio de sesión exitoso", JOptionPane.INFORMATION_MESSAGE);
-                mainFrame.mostrarPuntoVenta();
-                // TODO: Aquí llamas a tu método principal para cambiar a la VistaPuntoVenta
-                // Ejemplo: mainFrame.mostrarVistaVenta(usuario);
-                
-            } else {
-                // Fracaso
-                JOptionPane.showMessageDialog(this, "Correo o contraseña incorrectos.", "Error de inicio de sesión", JOptionPane.ERROR_MESSAGE);
-            }
+        this.setSize(340, 220);
+        this.setLocationRelativeTo(null);
+        conexion = Conn.conectar();
+        if (conexion != null) {
+            usuarioDAO = new UsuarioDAOImpl(conexion);
+        } else {
+            JOptionPane.showMessageDialog(this, 
+                "Error al conectar con la base de datos", 
+                "Error de conexión", 
+                JOptionPane.ERROR_MESSAGE);
         }
     }
-    
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -72,80 +46,279 @@ public class VistaLogin extends javax.swing.JPanel implements ActionListener {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        layoutPrincipal = new javax.swing.JPanel();
+        jPanel2 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
-        lblCorreo = new javax.swing.JLabel();
-        lblContraseña = new javax.swing.JLabel();
+        jLabel2 = new javax.swing.JLabel();
         txtCorreo = new javax.swing.JTextField();
-        txtContraseña = new javax.swing.JPasswordField();
+        txtContrasena = new javax.swing.JPasswordField();
+        jLabel3 = new javax.swing.JLabel();
         bttnIngresar = new javax.swing.JButton();
 
-        jLabel1.setText("Login");
+        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setMinimumSize(new java.awt.Dimension(340, 165));
+        setPreferredSize(new java.awt.Dimension(340, 220));
+        setSize(size());
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowOpened(java.awt.event.WindowEvent evt) {
+                formWindowOpened(evt);
+            }
+        });
 
-        lblCorreo.setText("Correo:");
+        jLabel1.setText("Correo         :");
 
-        lblContraseña.setText("Contraseña:");
+        jLabel2.setText("Contraseña  :");
 
         txtCorreo.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 txtCorreoActionPerformed(evt);
             }
         });
+        txtCorreo.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                txtCorreoKeyTyped(evt);
+            }
+        });
+
+        txtContrasena.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                txtContrasenaActionPerformed(evt);
+            }
+        });
+        txtContrasena.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                txtContrasenaKeyTyped(evt);
+            }
+        });
+
+        javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
+        jPanel2.setLayout(jPanel2Layout);
+        jPanel2Layout.setHorizontalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel2Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGap(18, 18, 18)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(txtCorreo, javax.swing.GroupLayout.DEFAULT_SIZE, 388, Short.MAX_VALUE)
+                    .addComponent(txtContrasena))
+                .addContainerGap())
+        );
+        jPanel2Layout.setVerticalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel2Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel1)
+                    .addComponent(txtCorreo, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(18, 18, 18)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(txtContrasena, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel2))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+
+        jLabel3.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        jLabel3.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabel3.setText("LOGIN");
 
         bttnIngresar.setText("Ingresar");
+        bttnIngresar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                bttnIngresarActionPerformed(evt);
+            }
+        });
 
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
-        this.setLayout(layout);
+        javax.swing.GroupLayout layoutPrincipalLayout = new javax.swing.GroupLayout(layoutPrincipal);
+        layoutPrincipal.setLayout(layoutPrincipalLayout);
+        layoutPrincipalLayout.setHorizontalGroup(
+            layoutPrincipalLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(layoutPrincipalLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(layoutPrincipalLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addGroup(layoutPrincipalLayout.createSequentialGroup()
+                        .addGap(0, 0, Short.MAX_VALUE)
+                        .addComponent(bttnIngresar)
+                        .addGap(0, 0, Short.MAX_VALUE))
+                    .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap())
+        );
+        layoutPrincipalLayout.setVerticalGroup(
+            layoutPrincipalLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layoutPrincipalLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jLabel3)
+                .addGap(18, 18, 18)
+                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(6, 6, 6)
+                .addComponent(bttnIngresar)
+                .addContainerGap())
+        );
+
+        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
+        getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(116, 116, 116)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 52, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addComponent(bttnIngresar)
-                        .addGap(45, 45, 45))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(lblContraseña)
-                            .addComponent(lblCorreo))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel1)
-                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                .addComponent(txtCorreo)
-                                .addComponent(txtContraseña, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)))))
-                .addContainerGap(115, Short.MAX_VALUE))
+                .addContainerGap()
+                .addComponent(layoutPrincipal, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(37, 37, 37)
-                .addComponent(jLabel1)
-                .addGap(57, 57, 57)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(lblCorreo)
-                    .addComponent(txtCorreo, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(lblContraseña)
-                    .addComponent(txtContraseña, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(30, 30, 30)
-                .addComponent(bttnIngresar)
-                .addContainerGap(81, Short.MAX_VALUE))
+                .addContainerGap()
+                .addComponent(layoutPrincipal, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
         );
+
+        pack();
     }// </editor-fold>//GEN-END:initComponents
 
     private void txtCorreoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtCorreoActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_txtCorreoActionPerformed
 
+    private void bttnIngresarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bttnIngresarActionPerformed
+        realizarLogin();
+    }//GEN-LAST:event_bttnIngresarActionPerformed
+
+    private void txtContrasenaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtContrasenaActionPerformed
+        realizarLogin();
+    }//GEN-LAST:event_txtContrasenaActionPerformed
+
+    private void txtContrasenaKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtContrasenaKeyTyped
+        if(txtContrasena.getText().length() >= 20){
+            evt.consume();
+            
+        }
+    }//GEN-LAST:event_txtContrasenaKeyTyped
+
+    private void txtCorreoKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtCorreoKeyTyped
+        if(txtCorreo.getText().length() >= 40){
+            evt.consume();
+        }
+    }//GEN-LAST:event_txtCorreoKeyTyped
+
+    private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
+        txtCorreo.requestFocus();
+    }//GEN-LAST:event_formWindowOpened
+
+    private void realizarLogin() {
+        if (conexion == null) {
+            JOptionPane.showMessageDialog(this, "No hay conexión a la base de datos", "Error de conexión", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        String correo = txtCorreo.getText().trim();
+        String contrasena = new String(txtContrasena.getPassword());
+        
+        if (correo.isEmpty() || contrasena.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Por favor, complete todos los campos", "Campos incompletos", JOptionPane.WARNING_MESSAGE);
+            txtCorreo.requestFocus();
+            return;
+        }
+        
+        if (!correo.contains("@") || !correo.contains(".")) {
+            JOptionPane.showMessageDialog(this, 
+                "Por favor, ingrese un correo válido", 
+                "Correo inválido", 
+                JOptionPane.WARNING_MESSAGE);
+            txtCorreo.selectAll();
+            txtCorreo.requestFocus();
+            return;
+        }
+        
+        try {
+            bttnIngresar.setEnabled(false);
+            
+            Usuario usuario = usuarioDAO.autenticar(correo, contrasena);
+            
+            if (usuario != null) {
+                abrirVistaVenta(usuario);
+                
+            } else {
+                JOptionPane.showMessageDialog(this, "Correo o contraseña incorrectos", "Error de autenticación", JOptionPane.ERROR_MESSAGE);
+                
+                txtContrasena.setText("");
+                txtCorreo.selectAll();
+                txtCorreo.requestFocus();
+            }
+            
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error al verificar credenciales: " + e.getMessage(), "Error del sistema", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        } finally {
+            bttnIngresar.setEnabled(true);
+        }
+    }
+    
+    /**
+     * Método para abrir VistaVenta con el usuario logeado
+     */
+    private void abrirVistaVenta(Usuario usuario) {
+        try {
+            this.setVisible(false);
+            
+            VistaVenta vistaVenta = new VistaVenta(usuario);
+            vistaVenta.setVisible(true);
+
+            this.dispose();
+            
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, 
+                "Error al abrir la ventana de ventas: " + e.getMessage(), 
+                "Error", 
+                JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String args[]) {
+        /* Set the Nimbus look and feel */
+        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
+        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
+         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
+         */
+        try {
+            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (ClassNotFoundException ex) {
+            java.util.logging.Logger.getLogger(VistaLogin.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
+            java.util.logging.Logger.getLogger(VistaLogin.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (IllegalAccessException ex) {
+            java.util.logging.Logger.getLogger(VistaLogin.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+            java.util.logging.Logger.getLogger(VistaLogin.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        }
+        //</editor-fold>
+
+        /* Create and display the form */
+        java.awt.EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                new VistaLogin().setVisible(true);
+            }
+        });
+    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton bttnIngresar;
     private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel lblContraseña;
-    private javax.swing.JLabel lblCorreo;
-    private javax.swing.JPasswordField txtContraseña;
+    private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
+    private javax.swing.JPanel jPanel2;
+    private javax.swing.JPanel layoutPrincipal;
+    private javax.swing.JPasswordField txtContrasena;
     private javax.swing.JTextField txtCorreo;
     // End of variables declaration//GEN-END:variables
 }

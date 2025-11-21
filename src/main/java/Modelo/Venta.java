@@ -8,18 +8,30 @@ package Modelo;
  *
  * @author Santo Tomas
  */
+
 public class Venta {
     private int idVenta;
     private int idCliente;
+    private int idUsuario;
     private String fecha;
+    private double totalVenta;
 
     public Venta() {
     }
 
-    public Venta(int idVenta, int idCliente, String fecha) {
+    public Venta(int idVenta, int idCliente, int idUsuario, String fecha, double totalVenta) {
         this.idVenta = idVenta;
         this.idCliente = idCliente;
+        this.idUsuario = idUsuario;
         this.fecha = fecha;
+        this.totalVenta = totalVenta;
+    }
+
+    public Venta(int idCliente, int idUsuario, double totalVenta) {
+        this.idCliente = idCliente;
+        this.idUsuario = idUsuario;
+        this.totalVenta = totalVenta;
+        this.fecha = "";
     }
 
     public int getIdVenta() {
@@ -38,6 +50,14 @@ public class Venta {
         this.idCliente = idCliente;
     }
 
+    public int getIdUsuario() {
+        return idUsuario;
+    }
+
+    public void setIdUsuario(int idUsuario) {
+        this.idUsuario = idUsuario;
+    }
+
     public String getFecha() {
         return fecha;
     }
@@ -45,6 +65,12 @@ public class Venta {
     public void setFecha(String fecha) {
         this.fecha = fecha;
     }
-    
-    
+
+    public double getTotalVenta() {
+        return totalVenta;
+    }
+
+    public void setTotalVenta(double totalVenta) {
+        this.totalVenta = totalVenta;
+    }
 }

@@ -8,18 +8,18 @@ package Modelo;
  *
  * @author Santo Tomas
  */
-public class Productos {
+public class Producto {
     private int idProducto;
     private String nombre;
     private String categoria;
     private String marca;
-    private int precio;
+    private double precio;
     private int stock;
 
-    public Productos() {
+    public Producto() {
     }
 
-    public Productos(int idProducto, String nombre, String categoria, String marca, int precio, int stock) {
+    public Producto(int idProducto, String nombre, String categoria, String marca, int precio, int stock) {
         this.idProducto = idProducto;
         this.nombre = nombre;
         this.categoria = categoria;
@@ -61,7 +61,7 @@ public class Productos {
     }
 
     public int getPrecio() {
-        return precio;
+        return (int) precio;
     }
 
     public void setPrecio(int precio) {

@@ -13,17 +13,19 @@ public class Cliente {
     private String nombre;
     private String apelido;
     private String correo;
+    private String rut;
     private int telefono;
     private String direccion;
 
     public Cliente() {
     }
 
-    public Cliente(int idCliente, String nombre, String apelido, String correo, int telefono, String direccion) {
+    public Cliente(int idCliente, String nombre, String apelido, String correo, String rut, int telefono, String direccion) {
         this.idCliente = idCliente;
         this.nombre = nombre;
         this.apelido = apelido;
         this.correo = correo;
+        this.rut = rut;
         this.telefono = telefono;
         this.direccion = direccion;
     }
@@ -75,6 +77,14 @@ public class Cliente {
     public void setDireccion(String direccion) {
         this.direccion = direccion;
     }
+
+    public void setRut(String rut) {
+        this.rut = rut;
+    }
     
+    
+    public String getRut(){
+        return rut;
+    }
     
 }
